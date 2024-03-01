@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bonus Talep</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+
+        h1, h2 {
+            color: yellow;
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: yellow;
+            color: black;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #ffd700; /* Hover etkileşimi için biraz daha açık sarı renk */
+        }
+
+        .notification-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #333;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .close-button {
+            background-color: red; /* You can customize the color */
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .close-button:hover {
+            background-color: #ff0000; /* Hover color */
+        }
+    </style>
+</head>
+<body>
+    <label for="queryUserID">Sorgulama Üye ID:</label>
+    <input type="text" id="queryUserID" placeholder="Sorgulama Üye ID">
+    <button onclick="sorgula()">Sorgula</button>
+
+    <script>
+        function sorgula() {
+            const queryUserID = document.getElementById('queryUserID').value;
+
+            if (!queryUserID) {
+                alert('Lütfen sorgulama için üye ID girin!');
+                return;
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `get_bonus_info.php?user_id=${queryUserID}`, true); 
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        const bonusInfo = JSON.parse(xhr.responseText);
+
+                        if (bonusInfo) {
+                            const notification = document.getElementById('notificationPopup');
+                            notification.innerHTML = `Bonus ID: ${bonusInfo.id}, <br/> Üye ID: ${queryUserID}, <br/> Bonus Adı: ${bonusInfo.bonus_name}, <br/> Bonus Durumu: ${bonusInfo.bonus_status}, <br/> Bonus Açıklama: ${bonusInfo.bonus_aciklama}<br/>  <button onclick="kapatPopup()" class="close-button">Kapat</button>`;
+                            notification.style.display = 'block';
+
+                            const overlay = document.getElementById('overlay');
+                            overlay.style.display = 'block';
+                        } else {
+                            alert('Belirtilen üye ID ile ilgili bonus bilgisi bulunamadı.');
+                        }
+                    } else {
+                        alert('Sorgulama sırasında bir hata oluştu.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+    </script>
+
+    <h1>Bonus Talep</h1>
+
+    <label for="userID">Üye ID:</label>
+    <input type="text" id="userID" placeholder="Üye ID">
+
+    <h2>Bonus Seçimi</h2>
+    <ul>
+        <li><button onclick="onayBildir('Kayıp Bonusu')">Kayıp Bonusu</button></li>
+        <li><button onclick="onayBildir('Süper Hediye')">Süper Hediye</button></li>
+        <li><button onclick="onayBildir('Slot Şenliği')">Slot Şenliği</button></li>
+        <!-- İhtiyaca göre bonusları arttırabilirsiniz -->
+    </ul>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="notification-popup" id="notificationPopup">
+        <p id="popupText"></p>
+        <button onclick="kapatPopup()" class="close-button">Kapat</button>
+    </div>
+
+    <script>
+        function onayBildir(bonus) {
+            const userID = document.getElementById('userID').value;
+
+            if (!userID) {
+                alert('Lütfen üye ID girin!');
+                return;
+            }
+
+            const notification = document.getElementById('notificationPopup');
+            notification.innerHTML = `Üye ID: ${userID}, Bonus Adı: ${bonus} talep edilecektir. Onaylıyor musunuz? <button onclick="talepEt('${bonus}')">Evet</button> <button onclick="kapatPopup()">Hayır</button>`;
+            notification.style.display = 'block';
+
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'block';
+        }
+
+         function talepEt(bonus) {
+        const userID = document.getElementById('userID').value;
+
+        console.log(`Üye ID: ${userID}, Bonus Adı: ${bonus} için istek gönderiliyor.`);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'server_code.php', true); 
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                console.log(`Sunucu Yanıtı: ${xhr.status} - ${xhr.responseText}`);
+
+                if (xhr.status == 200) {
+                    const notification = document.getElementById('notificationPopup');
+                    notification.innerHTML = `Bonus talebiniz alındı! Üye ID: ${userID}, Bonus Adı: ${bonus}`;
+
+                    const overlay = document.getElementById('overlay');
+                    overlay.style.display = 'block';
+
+                    setTimeout(() => {
+                        kapatPopup();
+                    }, 3000);
+                } else {
+                    alert('Sunucu bir hata döndü. Detaylar için konsolu kontrol edin.');
+                }
+            }
+        };
+        xhr.send(`user_id=${userID}&bonus_name=${bonus}&bonus_status=pending`);
+        
+    }
+
+
+        function kapatPopup() {
+            const notification = document.getElementById('notificationPopup');
+            notification.style.display = 'none';
+
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>
