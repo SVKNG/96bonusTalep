@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
 
     <title>Bonus Yönetim Paneli</title>
     <style>
+        /* Tablo ve popup için CSS stilleri */
         table {
             border-collapse: collapse;
             width: 80%;
@@ -46,99 +47,102 @@
             z-index: 0;
         }
     </style>
-
 </head>
 <body>
-
     <h1>Bonus Yönetim Paneli</h1>
-<div id="bonusTable">
-    <?php 
-        $servername = "localhost"; // Sunucu adı
-$username = "root"; // Veritabanı kullanıcı adı
-$password = ""; // Veritabanı şifre
-$dbname = "96tr_db"; // Veritabanı adı
+    <div id="bonusTable">
+        <?php 
+            // Veritabanı bağlantısı için PHP kodu
+            $servername = "localhost"; // Sunucu adı
+            $username = "root"; // Veritabanı kullanıcı adı
+            $password = ""; // Veritabanı şifre
+            $dbname = "96tr_db"; // Veritabanı adı
 
+            $conn = new mysqli($servername, $username, $password, $dbname);
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+            if ($conn->connect_error) {
+                die("Bağlantı hatası: " . $conn->connect_error);
+            }
+        ?>
+    </div>
 
+    <div id="popup" class="popup">
+        <!-- Bonus durumu güncelleme için popup -->
+        <h2>Açıklama Girin</h2>
+        <textarea id="comment" rows="4" cols="50"></textarea>
+        <br>
+        <button onclick="updateBonusStatus('Onaylandı')">Onayla</button>
+        <button onclick="updateBonusStatus('Reddedildi')">Reddet</button>
+        <button onclick="updateBonusStatus('İşleme Alındı')">İşleme Al</button>
+        <button onclick="closePopup()">Kapat</button>
+    </div>
 
-if ($conn->connect_error) {
-    die("Bağlantı hatası: " . $conn->connect_error);
-}
-     ?>
-</div>
+    <div id="overlay" class="overlay" onclick="closePopup()"></div>
 
-<div id="popup" class="popup">
-    <h2>Açıklama Girin</h2>
-    <textarea id="comment" rows="4" cols="50"></textarea>
-    <br>
-    <button onclick="updateBonusStatus('Onaylandı')">Onayla</button>
-    <button onclick="updateBonusStatus('Reddedildi')">Reddet</button>
-    <button onclick="updateBonusStatus('İşleme Alındı')">İşleme Al</button>
-    <button onclick="closePopup()">Kapat</button>
-</div>
-
-<div id="overlay" class="overlay" onclick="closePopup()"></div>
-
-
-<script>
-    // Sayfa yüklendiğinde ve belirli aralıklarla otomatik güncelleme işlemi
-    $(document).ready(function() {
-       
-        updateTable();
-
-        setInterval(function() {
+    <script>
+        // Dinamik güncellemeler ve etkileşimler için JavaScript kodu
+        // Sayfa yüklendiğinde çalışacak fonksiyon
+        $(document).ready(function() {
+            // Başlangıçta tabloyu güncelle
             updateTable();
-        }, 5000); 
-    });
 
-    function updateTable() {
-        $.ajax({
-            url: 'last_content.php',
-            type: 'GET',
-            success: function(response) {
-               
-                $('#bonusTable').html(response);
-            },
-            error: function(error) {
-                console.error(error);
-            }
-        });
-    }
-
-    function openPopup(userId) {
-        document.getElementById("popup").style.display = "block";
-        document.getElementById("comment").dataset.userId = userId;
-    }
-
-    function closePopup() {
-        document.getElementById("popup").style.display = "none";
-        document.getElementById("comment").value = "";
-    }
-
-    function updateBonusStatus(action) {
-        var userId = document.getElementById("comment").dataset.userId;
-        var comment = document.getElementById("comment").value;
-
-        $.ajax({
-            url: 'update_bonus.php',
-            type: 'POST',
-            data: {
-                userId: userId,
-                action: action,
-                comment: comment
-            },
-            success: function(response) {
-                console.log(response);
-                // Güncelleme başarılıysa, tabloyu güncelle
+            // Tabloyu her 5 saniyede bir güncellemek için interval ayarla
+            setInterval(function() {
                 updateTable();
-                closePopup();
-            },
-            error: function(error) {
-                console.error(error);
-            }
+            }, 5000); 
         });
-    }
-</script>
+
+        // AJAX kullanarak tabloyu güncellemek için fonksiyon
+        function updateTable() {
+            $.ajax({
+                url: 'last_content.php',
+                type: 'GET',
+                success: function(response) {
+                    // bonusTable div'ini yanıtla güncelle
+                    $('#bonusTable').html(response);
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        // Belirli bir kullanıcı ID ile popup'ı açmak için fonksiyon
+        function openPopup(userId) {
+            document.getElementById("popup").style.display = "block";
+            document.getElementById("comment").dataset.userId = userId;
+        }
+
+        // Popup'ı kapatmak için fonksiyon
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("comment").value = "";
+        }
+
+        // AJAX kullanarak bonus durumunu güncellemek için fonksiyon
+        function updateBonusStatus(action) {
+            var userId = document.getElementById("comment").dataset.userId;
+            var comment = document.getElementById("comment").value;
+
+            $.ajax({
+                url: 'update_bonus.php',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    action: action,
+                    comment: comment
+                },
+                success: function(response) {
+                    console.log(response);
+                    // Güncelleme başarılıysa, tabloyu güncelle ve popup'ı kapat
+                    updateTable();
+                    closePopup();
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+    </script>
 </body>
 </html>
