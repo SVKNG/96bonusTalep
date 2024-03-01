@@ -24,9 +24,15 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
 
+    // SQL sorgusunu çalıştır ve sonucu kontrol et
     if ($stmt->execute()) {
+        // Sonuç setini al
         $result = $stmt->get_result();
+
+        // Sonuçları bir dizi olarak al
         $bonusInfo = $result->fetch_assoc();
+
+        // Bonus bilgilerini JSON formatında döndür
         echo json_encode($bonusInfo);
     } else {
         echo json_encode(null); // Belirtilen üye ID ile ilgili bonus bilgisi bulunamadı
